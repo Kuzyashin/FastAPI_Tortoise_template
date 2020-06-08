@@ -14,8 +14,6 @@ def configure_logging(log_settings: dict = None):
 
 
 def init_middlewares(app: FastAPI):
-    logging.config.dictConfig(DEFAULT_LOGGING)
-
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
@@ -25,13 +23,18 @@ def init_middlewares(app: FastAPI):
     )
 
 
+def get_app_list():
+    app_list = [f'{settings.APPLICATIONS_MODULE}.{app}.models' for app in settings.APPLICATIONS]
+    return app_list
+
+
 def register_db(app: FastAPI, db_url: str = None):
     db_url = db_url or settings.DB_URL
-
+    app_list = get_app_list()
     register_tortoise(
         app,
         db_url=db_url,
-        modules={"models": ["app.models.db.__init__"]},
+        modules={"models": app_list},
         generate_schemas=True,
         add_exception_handlers=True,
     )
