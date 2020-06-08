@@ -5,7 +5,9 @@ from tortoise.contrib.fastapi import register_tortoise
 from app.settings.config import settings
 
 
-logging.config.fileConfig('app/settings/logging.conf', disable_existing_loggers=False)
+from app.settings.log import DEFAULT_LOGGING
+
+logging.config.dictConfig(DEFAULT_LOGGING)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
