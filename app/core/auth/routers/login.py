@@ -5,7 +5,7 @@ from fastapi import APIRouter, Body, HTTPException, BackgroundTasks
 from app.applications.users.models import User
 from app.core.auth.schemas import JWTToken, CredentialsSchema, Msg
 from app.core.auth.utils.contrib import (generate_password_reset_token, send_reset_password_email,
-                                         verify_password_reset_token,
+                                         verify_password_reset_token, authenticate,
                                          )
 from app.core.auth.utils.jwt import create_access_token
 from app.core.auth.utils.password import get_password_hash
@@ -16,7 +16,7 @@ router = APIRouter()
 
 @router.post("/access-token", response_model=JWTToken, tags=["login"])
 async def login_access_token(credentials: CredentialsSchema):
-    user = await User.authenticate(credentials)
+    user = await authenticate(credentials)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not user.is_active:

@@ -13,7 +13,8 @@ from jwt.exceptions import InvalidTokenError
 from starlette.status import HTTP_403_FORBIDDEN
 
 from app.applications.users.models import User
-from app.core.auth.schemas import JWTTokenPayload
+from app.core.auth.schemas import JWTTokenPayload, CredentialsSchema
+from app.core.auth.utils import password
 from app.core.auth.utils.jwt import ALGORITHM
 from app.settings.config import settings
 
@@ -136,3 +137,27 @@ async def get_current_active_superuser(current_user: User = Security(get_current
             status_code=400, detail="The user doesn't have enough privileges"
         )
     return current_user
+
+
+async def authenticate(credentials: CredentialsSchema) -> Optional[User]:
+    if credentials.email:
+        user = await User.get_by_email(credentials.email)
+    elif credentials.username:
+        user = await User.get_by_username(credentials.username)
+    else:
+        return None
+
+    if user is None:
+        return None
+
+    verified, updated_password_hash = password.verify_and_update_password(
+        credentials.password, user.password_hash
+    )
+
+    if not verified:
+        return None
+        # Update password hash to a more robust one if needed
+    if updated_password_hash is not None:
+        user.password_hash = updated_password_hash
+        await self.save()
+    return user

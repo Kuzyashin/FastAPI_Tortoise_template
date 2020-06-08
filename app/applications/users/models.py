@@ -3,8 +3,7 @@ from typing import Optional
 from tortoise import fields
 from tortoise.exceptions import DoesNotExist
 
-from app.applications.users.schemas import BaseUserDB, BaseUserCreate, BaseUserUpdate
-from app.core.auth.schemas import CredentialsSchema
+from app.applications.users.schemas import BaseUserCreate, BaseUserUpdate
 from app.core.base.base_models import BaseCreatedUpdatedAtModel, UUIDDBModel, BaseDBModel
 from app.core.auth.utils import password
 import logging
@@ -27,66 +26,35 @@ class User(BaseDBModel, BaseCreatedUpdatedAtModel, UUIDDBModel):
         return self.username
 
     @classmethod
-    async def get_by_email(cls, email: str) -> Optional[BaseUserDB]:
+    async def get_by_email(cls, email: str) -> Optional["User"]:
         try:
             query = cls.get(email=email)
             user = await query
-            user_dict = await user.to_dict()
 
-            return BaseUserDB(**user_dict)
+            return user
         except DoesNotExist:
             return None
 
     @classmethod
-    async def get_by_username(cls, username: str) -> Optional[BaseUserDB]:
+    async def get_by_username(cls, username: str) -> Optional["User"]:
         try:
             query = cls.get(username=username)
             user = await query
-            user_dict = await user.to_dict()
 
-            return BaseUserDB(**user_dict)
+            return user
         except DoesNotExist:
             return None
 
     @classmethod
-    async def create(cls, user: BaseUserCreate) -> BaseUserDB:
+    async def create(cls, user: BaseUserCreate) -> "User":
         user_dict = user.dict()
         password_hash = password.get_password_hash(password=user.password)
         model = cls(**user_dict, password_hash=password_hash)
         await model.save()
-        user_dict = await model.to_dict()
-        logger.info(user_dict)
-        return BaseUserDB(**user_dict)
-
-    @classmethod
-    async def authenticate(cls, credentials: CredentialsSchema) -> Optional[BaseUserDB]:
-        if credentials.email:
-            user = await cls.get_by_email(credentials.email)
-        elif credentials.username:
-            user = await cls.get_by_username(credentials.username)
-        else:
-            return None
-
-        if user is None:
-            return None
-
-        verified, updated_password_hash = password.verify_and_update_password(
-            credentials.password, user.password_hash
-        )
-
-        logger.info(verified, updated_password_hash)
-
-        if not verified:
-            return None
-        # Update password hash to a more robust one if needed
-        if updated_password_hash is not None:
-            user.password_hash = updated_password_hash
-            await cls.update(user)
-        return user
+        return model
 
     class Meta:
         table = 'users'
 
     class PydanticMeta:
         computed = ["full_name"]
-
