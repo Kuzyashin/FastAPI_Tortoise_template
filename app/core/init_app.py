@@ -8,7 +8,12 @@ from app.settings.config import settings
 from app.settings.log import DEFAULT_LOGGING
 
 
-def init_app(app: FastAPI):
+def configure_logging(log_settings: dict = None):
+    log_settings = log_settings or DEFAULT_LOGGING
+    logging.config.dictConfig(log_settings)
+
+
+def init_middlewares(app: FastAPI):
     logging.config.dictConfig(DEFAULT_LOGGING)
 
     app.add_middleware(
@@ -19,9 +24,13 @@ def init_app(app: FastAPI):
         allow_headers=settings.CORS_ALLOW_HEADERS,
     )
 
+
+def register_db(app: FastAPI, db_url: str = None):
+    db_url = db_url or settings.DB_URL
+
     register_tortoise(
         app,
-        db_url=settings.DB_URL,
+        db_url=db_url,
         modules={"models": ["app.models.db.__init__"]},
         generate_schemas=True,
         add_exception_handlers=True,
