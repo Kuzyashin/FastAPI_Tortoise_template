@@ -18,8 +18,9 @@ router = APIRouter()
 @router.post("/access-token", response_model=JWTToken, tags=["login"])
 async def login_access_token(credentials: CredentialsSchema):
     user = await authenticate(credentials)
-    await update_last_login(user.id)
-    if not user:
+    if user:
+        await update_last_login(user.id)
+    elif not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
