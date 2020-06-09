@@ -3,6 +3,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Body, HTTPException, BackgroundTasks
 
 from app.applications.users.models import User
+from app.applications.users.utils import update_last_login
 from app.core.auth.schemas import JWTToken, CredentialsSchema, Msg
 from app.core.auth.utils.contrib import (generate_password_reset_token, send_reset_password_email,
                                          verify_password_reset_token, authenticate,
@@ -17,6 +18,7 @@ router = APIRouter()
 @router.post("/access-token", response_model=JWTToken, tags=["login"])
 async def login_access_token(credentials: CredentialsSchema):
     user = await authenticate(credentials)
+    await update_last_login(user.id)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not user.is_active:
