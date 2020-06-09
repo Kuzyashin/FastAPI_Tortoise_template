@@ -6,6 +6,7 @@
 #### - Registration + password reset emails
 #### - Logging to files
 #### - Celery
+#### - Alpine Dockerfile
 
 # Установка
 #### Скопировать template.config.py -> config.py и заполнить
