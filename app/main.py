@@ -5,7 +5,6 @@ from app.core.auth.routers.login import router as login_router
 from app.applications.users.routes import router as users_router
 
 from app.core.init_app import configure_logging, init_middlewares, register_db, register_exceptions
-from app.core.exceptions import APIException, on_api_exception
 
 app = FastAPI(
     title=settings.APP_TITLE,

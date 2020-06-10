@@ -3,11 +3,9 @@ from typing import Optional
 from tortoise import fields
 from tortoise.exceptions import DoesNotExist
 
-from app.applications.users.schemas import BaseUserCreate, BaseUserUpdate
+from app.applications.users.schemas import BaseUserCreate
 from app.core.base.base_models import BaseCreatedUpdatedAtModel, UUIDDBModel, BaseDBModel
 from app.core.auth.utils import password
-import logging
-logger = logging.getLogger('AUTH')
 
 
 class User(BaseDBModel, BaseCreatedUpdatedAtModel, UUIDDBModel):
@@ -29,9 +27,8 @@ class User(BaseDBModel, BaseCreatedUpdatedAtModel, UUIDDBModel):
     @classmethod
     async def get_by_email(cls, email: str) -> Optional["User"]:
         try:
-            query = cls.get(email=email)
+            query = cls.get_or_none(email=email)
             user = await query
-
             return user
         except DoesNotExist:
             return None
@@ -41,7 +38,6 @@ class User(BaseDBModel, BaseCreatedUpdatedAtModel, UUIDDBModel):
         try:
             query = cls.get(username=username)
             user = await query
-
             return user
         except DoesNotExist:
             return None
