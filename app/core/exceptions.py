@@ -2,6 +2,10 @@ from fastapi.requests import Request
 from starlette.responses import JSONResponse
 
 
+class SettingNotFound(Exception):
+    pass
+
+
 class APIException(Exception):
     def __init__(self, status_code, message: str = '', *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
