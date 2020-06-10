@@ -1,6 +1,7 @@
 FROM python:3.7-alpine as bigimage
 COPY ./app ./app
-RUN apk add --no-cache linux-headers g++ build-base
+RUN apk add --no-cache linux-headers g++ build-base libressl-dev libxslt-dev libgcrypt-dev musl-dev libffi-dev \
+libxml2 libxslt libc-dev
 RUN pip wheel --wheel-dir=/root/wheels -r ./app/requirements.txt
 FROM python:3.7-alpine as smallimage
 COPY --from=bigimage /root/wheels /root/wheels
@@ -10,4 +11,4 @@ RUN pip install \
       --find-links=/root/wheels --no-cache-dir -r ./app/requirements.txt
 ENV PYTHONUNBUFFERED 1
 COPY ./app ./app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

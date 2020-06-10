@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 
+from app.core.exceptions import APIException, on_api_exception
 from app.settings.config import settings
 from app.settings.log import DEFAULT_LOGGING
 
@@ -38,3 +39,7 @@ def register_db(app: FastAPI, db_url: str = None):
         generate_schemas=True,
         add_exception_handlers=True,
     )
+
+
+def register_exceptions(app: FastAPI):
+    app.add_exception_handler(APIException, on_api_exception)
