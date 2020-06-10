@@ -21,10 +21,6 @@ from app.settings.config import settings
 password_reset_jwt_subject = "passwordreset"
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl="/api/auth/login/access-token")
 
-import logging
-
-logger = logging.getLogger(__name__)
-
 
 def send_email(email_to: str, subject_template="", html_template="", environment={}):
     assert settings.EMAILS_ENABLED, "no provided configuration for email variables"
@@ -159,5 +155,5 @@ async def authenticate(credentials: CredentialsSchema) -> Optional[User]:
         # Update password hash to a more robust one if needed
     if updated_password_hash is not None:
         user.password_hash = updated_password_hash
-        await self.save()
+        await user.save()
     return user

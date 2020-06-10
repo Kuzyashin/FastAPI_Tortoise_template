@@ -1,5 +1,9 @@
-from fastapi.responses import UJSONResponse
 from fastapi.requests import Request
+from starlette.responses import JSONResponse
+
+
+class SettingNotFound(Exception):
+    pass
 
 
 class APIException(Exception):
@@ -10,13 +14,9 @@ class APIException(Exception):
         self.status_code = status_code
 
 
-async def on_api_exception(request: Request, exception: APIException) -> UJSONResponse:
-    response = (
-        content={"error": exception.message},
-        status_code=exception.status_code,
-        )
-    try:
-        return UJSONResponse(response)
-    except:
-        from fastapi.responses import JSONResponse
-        return JSONResponse(response)
+async def on_api_exception(request: Request, exception: APIException) -> JSONResponse:
+    response = {
+        "content": {"error": exception.message},
+        "status_code": exception.status_code
+    }
+    return JSONResponse(**response)

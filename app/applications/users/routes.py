@@ -98,14 +98,14 @@ async def read_user_by_id(
     """
     Get a specific user by id.
     """
-    user = User.get(id=user_id)
+    user = await User.get(id=user_id)
     if user == current_user:
         return user
     if not current_user.is_superuser:
         raise HTTPException(
             status_code=400, detail="The user doesn't have enough privileges"
         )
-    return await user
+    return user
 
 
 @router.put("/{user_id}", response_model=BaseUserOut, status_code=200, tags=['users'])

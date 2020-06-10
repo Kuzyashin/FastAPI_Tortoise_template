@@ -53,6 +53,7 @@ class BaseUserDB(BaseUser):
     hashed_id: UUID4
     password_hash: str
     updated_at: datetime
+    last_login: Optional[datetime]
 
     class Config:
         orm_mode = True

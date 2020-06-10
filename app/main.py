@@ -1,12 +1,15 @@
 from fastapi import FastAPI
-
-from app.settings.config import settings
-from app.applications.users import routes
 from app.core.auth.routers.login import router as login_router
 from app.applications.users.routes import router as users_router
+from app.core.exceptions import SettingNotFound
+from app.core.init_app import configure_logging, init_middlewares, register_db, register_exceptions
 
-from app.core.init_app import configure_logging, init_middlewares, register_db
-from app.core.exceptions import APIException, on_api_exception
+
+try:
+    from app.settings.config import settings
+except ImportError:
+    raise SettingNotFound('Can not import settings. Create settings file from template.config.py')
+
 
 app = FastAPI(
     title=settings.APP_TITLE,
@@ -18,7 +21,7 @@ app = FastAPI(
 configure_logging()
 init_middlewares(app)
 register_db(app)
+register_exceptions(app)
 
-app.add_exception_handler(APIException, on_api_exception)
 app.include_router(login_router, prefix='/api/auth/login')
 app.include_router(users_router, prefix='/api/auth/users')
