@@ -1,0 +1,38 @@
+version: "3.8"
+services:
+
+  web:
+    image: web:latest-local
+    env_file:
+      - .local.env
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    ports:
+      - 8000:8000
+    volumes:
+      - ./app:/app
+
+  celery:
+    image: celery:latest-local
+    env_file:
+      - .local.env
+    build:
+      context: .
+      dockerfile: celery.Dockerfile
+    depends_on:
+      - web
+    volumes:
+      - ./app:/app
+
+  flower:
+    image: flower:latest-local
+    build:
+      context: .
+      dockerfile: flower.Dockerfile
+    env_file:
+      - .local.env
+    volumes:
+      - ./app:/app
+    ports:
+      - 8888:8888

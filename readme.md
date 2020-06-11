@@ -7,6 +7,7 @@
 #### - Logging to files
 #### - Celery
 #### - Alpine Dockerfile
+#### - Docker-compose files
 
 # Установка
 #### Скопировать template.config.py -> config.py и заполнить

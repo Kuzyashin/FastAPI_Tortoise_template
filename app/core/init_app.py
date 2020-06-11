@@ -7,6 +7,8 @@ from tortoise.contrib.fastapi import register_tortoise
 from app.core.exceptions import APIException, on_api_exception
 from app.settings.config import settings
 from app.settings.log import DEFAULT_LOGGING
+from app.core.auth.routers.login import router as login_router
+from app.applications.users.routes import router as users_router
 
 
 def configure_logging(log_settings: dict = None):
@@ -43,3 +45,8 @@ def register_db(app: FastAPI, db_url: str = None):
 
 def register_exceptions(app: FastAPI):
     app.add_exception_handler(APIException, on_api_exception)
+
+
+def register_routers(app: FastAPI):
+    app.include_router(login_router, prefix='/api/auth/login')
+    app.include_router(users_router, prefix='/api/auth/users')

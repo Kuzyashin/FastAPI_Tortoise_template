@@ -243,3 +243,16 @@ fabric.properties
 .idea
 *.db*
 app/settings/config.py
+.prod.env
+.local.env
+.prod.full.env
+!/app/templates/emails/build/
+/docker/redis/redis-data/
+/docker/redis/log/
+/docker/postgres/
+/docker/rabbitmq/data/
+/docker/rabbitmq/logs/
+/docker/rabbitmq/etc/rabbitmq.conf
+!/docker/rabbitmq/etc/enabled_plugins
+docker-stack.yml
+!/docker/postgres/.gitkeep

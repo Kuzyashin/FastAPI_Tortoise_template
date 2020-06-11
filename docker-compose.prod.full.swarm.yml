@@ -1,0 +1,316 @@
+version: "3.8"
+networks:
+  webgateway:
+    external: true
+services:
+
+  traefik:
+    image: traefik:v2.2
+    container_name: traefik
+    networks:
+      - webgateway
+      - default
+    command:
+      - --api.insecure=false
+      - --providers.docker.swarmMode=true
+      - --providers.docker.swarmModeRefreshSeconds=30s
+      - --providers.docker
+      - --providers.docker.exposedbydefault=false
+      - --entryPoints.web.address=:80
+      - --accesslog
+      - --log
+      - --api
+    deploy:
+      labels:
+        - traefik.docker.network=traefik
+        - traefik.enable=true
+        - traefik.port=80
+        - traefik.http.routers.api.rule=Host(`traefik.${DOMAIN?Variable not set}`)
+        - traefik.http.routers.api.service=api@internal
+        - traefik.http.routers.api.middlewares=auth
+        - traefik.http.services.dummyService.loadbalancer.server.port=1337
+        - traefik.http.middlewares.auth.basicauth.users=awaker:$$apr1$$fjUPC25L$$eXYA/ozckyqZTVN1WDGVY0
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+      rollback_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 100M
+        reservations:
+          cpus: '0.05'
+          memory: 20M
+    ports:
+      - 80:80
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  backend:
+    image: backend:latest-prod
+    networks:
+      - webgateway
+      - default
+    env_file:
+      - .prod.env
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    ports:
+      - 8000:8000
+    volumes:
+      - ./app:/app
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=webgateway
+        - traefik.port=8000
+        - traefik.http.routers.backend.rule=Host(`backend.${DOMAIN?Variable not set}`)
+        - traefik.http.routers.backend.entrypoints=web
+        - traefik.http.services.backend.loadbalancer.server.port=8000
+      mode: replicated
+      replicas: 4
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+      rollback_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 150M
+        reservations:
+          cpus: '0.20'
+          memory: 40M
+
+  celery:
+    image: celery:latest-prod
+    env_file:
+      - .prod.env
+    build:
+      context: .
+      dockerfile: celery.Dockerfile
+    ports:
+      - 8000
+    depends_on:
+      - backend
+    volumes:
+      - ./app:/app
+    deploy:
+      mode: replicated
+      replicas: 4
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+      rollback_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 200M
+        reservations:
+          cpus: '0.20'
+          memory: 50M
+
+  flower:
+    image: flower:latest-prod
+    container_name: flower
+    networks:
+      - webgateway
+      - default
+    build:
+      context: .
+      dockerfile: flower.Dockerfile
+    env_file:
+      - .prod.env
+    volumes:
+      - ./app:/app
+    ports:
+      - 8888:8888
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=webgateway
+        - traefik.port=8888
+        - traefik.http.routers.flower.rule=Host(`flower.${DOMAIN?Variable not set}`)
+        - traefik.http.routers.flower.entrypoints=web
+        - traefik.http.services.flower.loadbalancer.server.port=8888
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+      rollback_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 50M
+        reservations:
+          cpus: '0.05'
+          memory: 20M
+
+  redis:
+    image: redis
+    container_name: redis
+    env_file:
+      - .prod.env
+    command: [ "redis-server", "/docker/redis/redis.conf" ]
+    ports:
+      - 6379:6379
+    volumes:
+      - ./docker/redis/redis-data:/data/bases
+      - ./docker/redis/redis.conf:/docker/redis/redis.conf
+      - ./docker/redis/log:/docker/redis/log
+    deploy:
+      placement:
+        constraints:
+          - "node.labels.type==queue"
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+      rollback_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+
+  rabbitmq:
+    image: rabbitmq:3.8.4-management
+    container_name: rabbitmq
+    networks:
+      - webgateway
+      - default
+    env_file:
+      - .prod.env
+    volumes:
+      - ./docker/rabbitmq/etc/:/etc/rabbitmq/
+      - ./docker/rabbitmq/data/:/var/lib/rabbitmq/
+      - ./docker/rabbitmq/logs/:/var/log/rabbitmq/
+    ports:
+      - 5672:5672
+      - 15672:15672
+    deploy:
+      placement:
+        constraints:
+          - "node.labels.type==queue"
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=webgateway
+        - traefik.port=15672
+        - traefik.http.routers.rabbit.rule=Host(`rabbit.${DOMAIN?Variable not set}`)
+        - traefik.http.routers.rabbit.entrypoints=web
+        - traefik.http.services.rabbit.loadbalancer.server.port=15672
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+      rollback_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+
+
+  db:
+    image: postgres:12
+    networks:
+      - webgateway
+      - default
+    volumes:
+      - ./docker/postgres/:/var/lib/postgresql/data/pgdata
+    env_file:
+      - .prod.full.env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    deploy:
+      constraints:
+        - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+      rollback_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+
+  pgadmin:
+    image: dpage/pgadmin4
+    depends_on:
+      - db
+    env_file:
+      - .prod.full.env
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=webgateway
+        - traefik.port=5050
+        - traefik.http.routers.pgadmin.rule=Host(`pgadmin.${DOMAIN?Variable not set}`)
+        - traefik.http.routers.pgadmin.entrypoints=web
+        - traefik.http.services.pgadmin.loadbalancer.server.port=5050
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+      rollback_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first

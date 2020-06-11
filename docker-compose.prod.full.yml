@@ -1,0 +1,132 @@
+version: "3.8"
+services:
+
+  traefik:
+    image: traefik:v2.2
+    container_name: traefik
+    command:
+      - --api.insecure=false
+      - --providers.docker
+      - --providers.docker.exposedbydefault=false
+      - --entryPoints.web.address=:80
+      - --accesslog
+      - --log
+      - --api
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.api.rule=Host(`traefik.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.api.service=api@internal
+      - traefik.http.routers.api.middlewares=auth
+      - traefik.http.middlewares.auth.basicauth.users=awaker:$$apr1$$fjUPC25L$$eXYA/ozckyqZTVN1WDGVY0
+    ports:
+      - 80:80
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+
+  backend:
+    image: backend:latest-prod-full
+    depends_on:
+      - db
+    env_file:
+      - .prod.full.env
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    ports:
+      - 8000
+    volumes:
+      - ./app:/app
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.backend.rule=Host(`backend.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.backend.entrypoints=web
+      - traefik.http.services.backend.loadbalancer.server.port=8000
+
+  celery:
+    image: celery:latest-prod-full
+    env_file:
+      - .prod.full.env
+    build:
+      context: .
+      dockerfile: celery.Dockerfile
+    ports:
+      - 8000
+    depends_on:
+      - backend
+    volumes:
+      - ./app:/app
+
+  flower:
+    image: flower:latest-prod-full
+    container_name: flower
+    build:
+      context: .
+      dockerfile: flower.Dockerfile
+    env_file:
+      - .prod.full.env
+    volumes:
+      - ./app:/app
+    ports:
+      - 8888
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.flower.rule=Host(`flower.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.flower.entrypoints=web
+      - traefik.http.services.flower.loadbalancer.server.port=8888
+
+  redis:
+    image: redis
+    container_name: redis
+    env_file:
+      - .prod.full.env
+    command: [ "redis-server", "/docker/redis/redis.conf" ]
+
+    ports:
+      - 6379
+
+    volumes:
+      - ./docker/redis/redis-data:/data/bases
+      - ./docker/redis/redis.conf:/docker/redis/redis.conf
+      - ./docker/redis/log:/docker/redis/log
+
+  rabbitmq:
+    image: rabbitmq:3.8.4-management
+    container_name: rabbitmq
+    env_file:
+      - .prod.full.env
+    volumes:
+      - ./docker/rabbitmq/etc/:/etc/rabbitmq/
+      - ./docker/rabbitmq/data/:/var/lib/rabbitmq/
+      - ./docker/rabbitmq/logs/:/var/log/rabbitmq/
+    ports:
+      - 5672
+      - 15672
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.rabbit.rule=Host(`rabbit.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.rabbit.entrypoints=web
+      - traefik.http.services.rabbit.loadbalancer.server.port=15672
+
+  db:
+    image: postgres:12
+    volumes:
+      - ./docker/postgres/:/var/lib/postgresql/data/pgdata
+    env_file:
+      - .prod.full.env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+
+
+  pgadmin:
+    image: dpage/pgadmin4
+    depends_on:
+      - db
+    env_file:
+      - .prod.full.env
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.pgadmin.rule=Host(`pgadmin.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.pgadmin.entrypoints=web
+      - traefik.http.services.pgadmin.loadbalancer.server.port=5050
