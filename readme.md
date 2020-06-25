@@ -8,6 +8,7 @@
 #### - Celery
 #### - Alpine Dockerfile
 #### - Docker-compose files
+#### - NGINX
 
 # Установка
 #### Скопировать template.config.py -> config.py и заполнить
