@@ -2,6 +2,7 @@
 ### Включает в себя
 #### - FastAPI
 #### - TortoiseORM
+#### - Aerich
 #### - User model + JWT auth
 #### - Registration + password reset emails
 #### - Logging to files

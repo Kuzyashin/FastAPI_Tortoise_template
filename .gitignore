@@ -256,3 +256,4 @@ app/settings/config.py
 !/docker/rabbitmq/etc/enabled_plugins
 docker-stack.yml
 !/docker/postgres/.gitkeep
+/aerich.ini
