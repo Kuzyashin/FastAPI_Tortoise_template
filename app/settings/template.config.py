@@ -21,6 +21,19 @@ class Settings:
     EMAIL_TEMPLATES_DIR = os.path.join(BASE_DIR, "app/templates/emails/build/")
 
     DB_URL = 'sqlite://./test.db'
+    DB_CONNECTIONS = {
+            'default': {
+                'engine': 'tortoise.backends.sqlite',
+                'db_url': DB_URL,
+                'credentials': {
+                    'host': '',
+                    'port': '',
+                    'user': '',
+                    'password': '',
+                    'database': '',
+                }
+            },
+        }
 
     SECRET_KEY = '3488a63e1765035d386f05409663f55c83bfae3b3c61a932744b20ad14244dcf'  # openssl rand -hex 32
     JWT_ALGORITHM = 'HS25'

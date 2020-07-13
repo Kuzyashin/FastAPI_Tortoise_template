@@ -31,24 +31,11 @@ def get_app_list():
     return app_list
 
 
-def get_tortoise_config(db_url: str = None) -> dict:
-    db_url = db_url or settings.DB_URL
+def get_tortoise_config() -> dict:
     app_list = get_app_list()
     app_list.append('aerich.models')
     config = {
-        'connections': {
-            'default': {
-                'engine': 'tortoise.backends.sqlite',
-                'db_url': db_url,
-                'credentials': {
-                    'host': '',
-                    'port': '',
-                    'user': '',
-                    'password': '',
-                    'database': '',
-                }
-            },
-        },
+        'connections': settings.DB_CONNECTIONS,
         'apps': {
             'models': {
                 'models': app_list,
