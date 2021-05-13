@@ -58,7 +58,7 @@ premailer==3.7.0
 prometheus-client==0.8.0
 py==1.9.0
 pycparser==2.20
-pydantic==1.6.1
+pydantic==1.6.2
 PyJWT==1.7.1
 PyMySQL
 pyparsing==2.4.7
