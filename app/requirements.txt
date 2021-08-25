@@ -26,7 +26,7 @@ databases==0.3.2
 dnspython
 email-validator==1.1.1
 emails==0.6
-fastapi==0.60.1
+fastapi==0.65.2
 flower==0.9.5
 future==0.18.2
 h11==0.9.0
