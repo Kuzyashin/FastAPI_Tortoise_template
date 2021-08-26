@@ -7,7 +7,7 @@ anyio==1.4.0
 async-generator==1.10
 async-timeout==3.0.1
 asyncclick==7.0.9
-asyncpg==0.20.1
+asyncpg==0.21.0
 atlastk==0.11.1
 attrs==19.3.0
 bcrypt==3.1.7
