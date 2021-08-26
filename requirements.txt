@@ -59,7 +59,7 @@ pluggy==0.13.1
 premailer==3.7.0
 prometheus-client==0.8.0
 prompt-toolkit==3.0.5
-py==1.9.0
+py==1.10.0
 pycparser==2.20
 pydantic==1.6.2
 PyJWT==1.7.1
