@@ -64,7 +64,7 @@ async def reset_password(token: str = Body(...), new_password: str = Body(...)):
             status_code=404,
             detail="The user with this username does not exist in the system.",
         )
-    elif not User.is_active:
+    elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     hashed_password = get_password_hash(new_password)
     user.hashed_password = hashed_password
