@@ -68,7 +68,7 @@ python-dateutil==2.8.1
 python-editor==1.0.4
 python-multipart==0.0.5
 pytz==2020.1
-redis==3.5.3
+redis==4.5.3
 requests==2.24.0
 rfc3986==1.4.0
 six==1.15.0
